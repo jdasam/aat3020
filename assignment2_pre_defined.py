@@ -1,11 +1,47 @@
 import torch
 import torch.nn as nn
-from torchtext.data.utils import get_tokenizer
 from pathlib import Path
 import random
 from torch.utils.data import DataLoader
 from torch.nn.utils.rnn import pad_sequence, pack_padded_sequence, PackedSequence, pad_packed_sequence
 from collections import Counter
+
+
+
+class Tokenizer:
+  _patterns = [r'\'', r'\"', r'\.', r'<br \/>', r',', r'\(', r'\)', r'\!', r'\?', r'\;', r'\:', r'\s+']
+
+  _replacements = [' \'  ', '', ' . ', ' ', ' , ', ' ( ', ' ) ', ' ! ', ' ? ',     ' ',    ' ',   ' ']
+
+  _patterns_dict = list((re.compile(p), r) for p, r in zip(_patterns, _replacements))
+
+
+  def __call__(self, line):
+      r"""
+      Basic normalization for a line of text.
+      Normalization includes
+      - lowercasing
+      - complete some basic text normalization for English words as follows:
+          add spaces before and after '\''
+          remove '\"',
+          add spaces before and after '.'
+          replace '<br \/>'with single space
+          add spaces before and after ','
+          add spaces before and after '('
+          add spaces before and after ')'
+          add spaces before and after '!'
+          add spaces before and after '?'
+          replace ';' with single space
+          replace ':' with single space
+          replace multiple spaces with single space
+
+      Returns a list of tokens after splitting on whitespace.
+      """
+
+      line = line.lower()
+      for pattern_re, replaced_str in self._patterns_dict:
+          line = pattern_re.sub(replaced_str, line)
+      return line.split()
 
 class SentimentModel(nn.Module):
   def __init__(self,vocab_size, hidden_size=128, num_layers=3, ):
