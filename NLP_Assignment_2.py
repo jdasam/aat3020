@@ -1,18 +1,21 @@
 import torch
-from torchtext.data.utils import get_tokenizer
 from pathlib import Path
 import random
 from torch.utils.data import DataLoader
 from torch.nn.utils.rnn import PackedSequence, pad_packed_sequence, pack_sequence
 import torch
 from tqdm.auto import tqdm
+from typing import List, Tuple, Union
 
-from assignment2_pre_defined import get_train_txt_paths_in_split, SentimentModel, read_txt, make_vocab_from_txt_fns
+from assignment2_pre_defined import get_train_txt_paths_in_split, SentimentModel, read_txt, make_vocab_from_txt_fns, Tokenizer
+
+
+
 
 class IMDbData:
   def __init__(self, path_list):
     self.paths = path_list
-    self.tokenizer = get_tokenizer('basic_english')
+    self.tokenizer = Tokenizer()
   
   def __len__(self):
     """
@@ -308,7 +311,7 @@ def main():
 
   print(f"Number of training data: {len(train_pths)}, validation data: {len(valid_pths)}, test data: {len(test_pths)}")
 
-  tokenizer = get_tokenizer('basic_english')
+  tokenizer = Tokenizer()
   entire_vocab = make_vocab_from_txt_fns(train_pths, tokenizer)
   min_count = 5
   vocab = sorted([token for token, count in entire_vocab.items() if count >= min_count])
