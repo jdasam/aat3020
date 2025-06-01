@@ -622,10 +622,10 @@ def main():
   answer2 = torch.Tensor([[ 2.5171,  0.6216,  3.7929,  2.6163,  5.3290,  0.3592,  2.3067, -0.1099,
           1.8963,  0.4175, -1.4283,  1.4388, -2.7825, -1.3690, -1.9615, -1.9514,
           -6.4635,  1.9574,  0.1868,  8.5354,  4.6053,  2.8786, -2.1453]])
-  assert att_score.ndim == 3 and att_score.shape == torch.Size([num_b, num_ts, num_tt]), 'Check the output shape'
-  assert torch.allclose(att_score[2,4], answer, atol=1e-4), 'Calculated result is wrong'
-  assert torch.allclose(att_score[3,:,2], answer2, atol=1e-4),  'Calculated result is wrong'
-  mask = torch.ones_like(att_score)[..., 0]
+  assert att_score.ndim == 3 and att_score.shape == torch.Size([num_b, num_tt, num_ts]), 'Check the output shape'
+  assert torch.allclose(att_score[2,:,4], answer, atol=1e-4), 'Calculated result is wrong'
+  assert torch.allclose(att_score[3,2,:], answer2, atol=1e-4),  'Calculated result is wrong'
+  mask = torch.ones_like(att_score)[:, 0]
   mask[4, 15:] = 0
   mask[5, 17:] = 0
 
@@ -727,9 +727,9 @@ def main():
   mask = torch.ones([3, 9, 9])
   mask[1, 2:] = 0
   mask[2, 7:] = 0
-  att_score = torch.randn([3, 9, 9])
+  att_score = torch.randn([3, 9, 9]).transpose(1,2) # Transpose here is just to match the test value for assertion
   att_score_modified = att_score.clone()
-  att_score_modified[1, 2:] = 0 
+  att_score_modified[1, :, 2:] = 0
   attention_weight = get_3d_masked_softmax(att_score, mask)
   attention_weight_for_modified = get_3d_masked_softmax(att_score_modified, mask)
 
