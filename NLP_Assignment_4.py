@@ -285,7 +285,7 @@ def translate(model, source_sentence):
     if current_decoder_token == 3: ## end of sentence token
       break
     total_output.append(selected_token[0])
-    total_attetion_weights.append(att_weight[0,:,0])
+    total_attetion_weights.append(att_weight[0,0])
   predicted_tokens = torch.cat(total_output, dim=0).tolist()
   attention_map = torch.stack(total_attetion_weights, dim=1)
   
@@ -633,12 +633,12 @@ def main():
   attention_weight
 
   answer = torch.Tensor([0.0120,     0.0002,     0.0901,     0.0003,     0.0259,     0.0036,
-            0.5617,     0.0108,     0.2508,     0.0054,     0.0001,     0.0010,
-            0.0000,     0.0005,     0.0375,     0.0000,     0.0000,     0.0000,
+              0.5617,     0.0108,     0.2508,     0.0054,     0.0001,     0.0010,
+              0.0000,     0.0005,     0.0375,     0.0000,     0.0000,     0.0000,
               0.0000,     0.0000,     0.0000,     0.0000,     0.0000])
-  assert torch.allclose(attention_weight[4,:,3], answer, atol=1e-4), 'Calculated result is wrong'
-  assert torch.allclose(attention_weight.sum(1),  torch.tensor([1.0]) , atol=1e-6 ), 'Sum of attention weight has to be 1'
-
+  assert torch.allclose(attention_weight[4,3], answer, atol=1e-4), 'Calculated result is wrong'
+  assert torch.allclose(attention_weight.sum(2),  torch.tensor([1.0]) , atol=1e-6 ), 'Sum of attention weight has to be 1'
+  assert torch.allclose(attention_weight, attention_weight_for_modified), "Output is different even though only masked part is different"
   att_out = get_batch_weighted_sum(keys, attention_weight)
 
   answer = torch.Tensor([-0.9348, -1.2628, -0.9189, -0.3434, -1.6476,  0.1031, -0.6963, -0.7462,
