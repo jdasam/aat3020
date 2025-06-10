@@ -743,16 +743,15 @@ def main():
   torch.manual_seed(0)
   test = torch.randn(5, 17, 8)
   linear = nn.Linear(8, 16 * 3)
-  mask = torch.ones([5, 17, 17])
-  mask[2, 4:] = 0
-  mask[4, 14:] = 0
+  mask_2d = torch.ones([5, 17])
+  mask_2d[2, 4:] = 0
+  mask_2d[4, 14:] = 0
 
-  att_vecs = get_self_attention(test, linear, mask)
+  att_vecs = get_self_attention(test, linear, mask_2d)
   modified_test = test.clone()
   modified_test[2, 4:] = 0
   modified_test[4, 14:] = 0
-  modified_att_vecs = get_self_attention(modified_test, linear, mask)
-
+  modified_att_vecs = get_self_attention(modified_test, linear, mask_2d)
   answer = torch.Tensor([-0.3925, -0.0043,  0.0343, -0.6713,  0.2388, -0.4703, -0.2195, -0.1550,
           -0.0830, -0.4170, -0.1829,  0.3884,  0.2899,  0.1284,  0.0225, -0.5960])
   answer2 = torch.Tensor([-0.4078,  0.0173,  0.2670, -0.7959, -0.0314, -0.3455,  0.5751, -0.5806,
@@ -783,8 +782,8 @@ def main():
   out_proj = nn.Linear(16, 16)
 
   mask = torch.ones([5, 17, 17])
-  mask[2, 4:] = 0
-  mask[4, 14:] = 0
+  mask[2, :, 4:] = 0
+  mask[4, :, 14:] = 0
 
   att_vecs = get_multi_head_self_attention(test, linear, out_proj, mask, num_head=4)
   official_attention = torch.nn.MultiheadAttention(16, num_heads=4, batch_first=True)
@@ -800,29 +799,28 @@ def main():
   torch.manual_seed(0)
   attention_module = SelfAttention(512, 512, 8)
   test = torch.randn(5, 17, 512)
-  mask = torch.ones([5, 17, 17])
-  mask[2, 4:] = 0
-  mask[4, 14:] = 0
+  mask_2d = torch.ones([5, 17])
+  mask_2d[2, 4:] = 0
+  mask_2d[4, 14:] = 0
 
-  out = attention_module(test, mask)
+  out = attention_module(test, mask_2d)
   official_attention = torch.nn.MultiheadAttention(512, num_heads=8, batch_first=True)
   official_attention.in_proj_weight.data = attention_module.qkv.weight.data
   official_attention.in_proj_bias.data = attention_module.qkv.bias.data
   official_attention.out_proj.weight.data = attention_module.out_proj.weight.data
   official_attention.out_proj.bias.data = attention_module.out_proj.bias.data
 
-  head_repeated_mask = mask.unsqueeze(1).repeat(1, 8, 1, 1).reshape(-1, mask.shape[1], mask.shape[2]).transpose(1,2)
-  official_attention_output, attention_weights = official_attention(test, test, test, attn_mask=head_repeated_mask==0)
+  official_attention_output, attention_weights = official_attention(test, test, test, key_padding_mask=mask_2d==0)
 
   assert torch.allclose(out, official_attention_output, atol=1e-4), "Your output is different from the official output"
   torch.manual_seed(0)
   encoder_layer = EncoderLayer(512, 512, 2048, 8)
   test = torch.randn(5, 17, 512)
-  mask = torch.ones([5, 17, 17])
-  mask[2, 4:] = 0
-  mask[4, 14:] = 0
+  mask_2d = torch.ones([5, 17])
+  mask_2d[2, 4:] = 0
+  mask_2d[4, 14:] = 0
 
-  out = encoder_layer({'input':test, 'mask':mask})
+  out = encoder_layer({'input':test, 'mask':mask_2d})
 
   official_encoder_layer = nn.TransformerEncoderLayer(512, 8, 2048, batch_first=True, dropout=0)
   official_encoder_layer.self_attn.in_proj_weight.data = encoder_layer.att_block.submodule.qkv.weight.data
@@ -838,8 +836,7 @@ def main():
   official_encoder_layer.norm2.weight.data = encoder_layer.mlp_block.layer_norm.weight.data
   official_encoder_layer.norm2.bias.data = encoder_layer.mlp_block.layer_norm.bias.data
 
-  head_repeated_mask = mask.unsqueeze(1).repeat(1, 8, 1, 1).reshape(-1, mask.shape[1], mask.shape[2]).transpose(1,2)
-  official_encoder_output = official_encoder_layer(test, src_mask=head_repeated_mask==0)
+  official_encoder_output = official_encoder_layer(test, src_key_padding_mask=mask_2d==0)
 
   assert torch.allclose(official_encoder_output, out['input'], atol=1e-4), "Your output is different from the official output"
 
@@ -874,9 +871,8 @@ def main():
   official_decoder_layer.norm3.weight.data = decoder_layer.mlp_block.layer_norm.weight.data
   official_decoder_layer.norm3.bias.data = decoder_layer.mlp_block.layer_norm.bias.data
 
-  head_repeated_mask_src = mask_src.unsqueeze(1).repeat(1, 8, 1, 1).reshape(-1, mask_src.shape[1], mask_src.shape[2]).transpose(1,2)
-  head_repeated_mask_tgt = mask_tgt.unsqueeze(1).repeat(1,8,1,1).reshape(-1, mask_tgt.shape[1], mask_tgt.shape[2]).transpose(1,2)
-  official_decoder_output = official_decoder_layer(test_tgt, test_src, tgt_mask=head_repeated_mask_tgt==0, memory_mask=head_repeated_mask_src==0)
+  head_repeated_mask_tgt = mask_tgt.unsqueeze(1).repeat(1,8,1,1).reshape(-1, mask_tgt.shape[1], mask_tgt.shape[2])
+  official_decoder_output = official_decoder_layer(test_tgt, test_src, tgt_mask=head_repeated_mask_tgt==0, memory_key_padding_mask=mask_src==0)
 
   assert torch.allclose(official_decoder_output, out['input'], atol=1e-4), "Your output is different from the official output"
 
