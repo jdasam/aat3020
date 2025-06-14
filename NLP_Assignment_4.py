@@ -153,8 +153,8 @@ def get_batch_weighted_sum(values, attention_weight):
 
   Argument:
     values (torch.Tensor): Has a shape of [N, Ts, C]. These are vectors that are used to form attention vector
-    attention_weight: Has a shape of [N, Ts, Tt], which represents the weight for each vector to compose the attention vector
-                      attention_weight[n, s, t] represents weight for value[n, s] that corresponds to a given query, queries[n, t]
+    attention_weight: Has a shape of [N, Tt, Ts], which represents the weight for each vector to compose the attention vector
+                      attention_weight[n, t, s] represents weight for value[n, s] that corresponds to a given query, queries[n, t]
 
   Output:
     attention_vector (torch.Tensor): Weighted sum of values using the attention weight.
@@ -164,7 +164,6 @@ def get_batch_weighted_sum(values, attention_weight):
   '''
 
   return
-
 
 
 class TranslatorAtt(TranslatorBi):
@@ -480,12 +479,12 @@ class CrossAttention(SelfAttention):
   def forward(self, q_seq, kv_seq, encoder_mask=None):
     '''
     Arguments:
-      q_seq (torch.Tensor): Sequence to be used for query
-      kv_seq (torch.Tensor): Sequence to be used for key and value
-      mask (torch.Tensor): Masking tensor. If the mask value is 0, the attention weight has to be zero. Shape: [N, Ty]
+      q_seq (torch.Tensor): Sequence to be used for query. Shape: [N, Tq, C]
+      kv_seq (torch.Tensor): Sequence to be used for key and value. Shape: [N, Tk, C]
+      encoder_mask (torch.Tensor): Masking tensor. If the mask value is 0, the attention weight has to be zero. Shape: [N, Tk]
 
     Outs:
-      output (torch.Tensor): Output of cross attention. Shape: [N, Tx, C]
+      output (torch.Tensor): Output of cross attention. Shape: [N, Tq, C]
 
     TODO: Complete this function using your completed functions of below:
     '''
@@ -638,10 +637,10 @@ def main():
   mask = torch.ones_like(att_score)[:, 0]
   mask[4, 15:] = 0
   mask[5, 17:] = 0
-
+  att_score_modified = att_score.clone()
+  att_score_modified[4, 15:] = 0
   attention_weight = get_masked_softmax(att_score, mask)
-  attention_weight
-
+  attention_weight_for_modified = get_masked_softmax(att_score_modified, mask)
   answer = torch.Tensor([0.0120,     0.0002,     0.0901,     0.0003,     0.0259,     0.0036,
               0.5617,     0.0108,     0.2508,     0.0054,     0.0001,     0.0010,
               0.0000,     0.0005,     0.0375,     0.0000,     0.0000,     0.0000,
@@ -737,13 +736,13 @@ def main():
   mask = torch.ones([3, 9, 9])
   mask[1, 2:] = 0
   mask[2, 7:] = 0
-  att_score = torch.randn([3, 9, 9]).transpose(1,2) # Transpose here is just to match the test value for assertion
+  att_score = torch.randn([3, 9, 9])
   att_score_modified = att_score.clone()
   att_score_modified[1, :, 2:] = 0
   attention_weight = get_3d_masked_softmax(att_score, mask)
   attention_weight_for_modified = get_3d_masked_softmax(att_score_modified, mask)
 
-  answer = torch.tensor([0.1348, 0.1429, 0.2938, 0.0369, 0.0748, 0.0577, 0.2591, 0.0000, 0.0000])
+  answer = torch.tensor([0.1236, 0.0821, 0.2482, 0.0555, 0.1957, 0.1697, 0.1252, 0.0000, 0.0000])
 
   assert attention_weight.ndim == 3
   # assert torch.allclose(attention_weight[2,:, 0], answer, atol=1e-4)
