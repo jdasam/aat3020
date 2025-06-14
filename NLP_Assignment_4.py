@@ -17,53 +17,53 @@ def get_attention_score_for_a_single_query(keys, query):
   This function returns an attention score for each vector in keys for a given query.
   You can regard 'keys' as hidden states over timestep of Encoder, while query is a hidden state of specific time step of Decoder
   Name 'keys' are used because it is used for calculating attention score (match rate between given vector and query).
-  
+
   For every C-dimensional vector key, the attention score is a dot product between the key and the query vector.
-  
+
   Arguments:
     keys (torch.Tensor): Has a shape of [T, C]. These are vectors that a query wants attend to
     query (torch.Tensor): Has a shape of [C]. This is a vector that attends to other set of vectors (keys and values)
-  
+
   Output:
     attention_score (torch.Tensor): The attention score in real number that represent how much does query have to attend to each vector in keys
                                     Has a shape of [T]
-                                    
-    attention_score[i] has to be a dot product value between keys[i] and query                                 
+
+    attention_score[i] has to be a dot product value between keys[i] and query
 
 
   TODO: Complete this sentence using torch.mm (matrix multiplication)
   Hint: You can use atensor.unsqueeze(dim) to expand a dimension (with a diemsion of length 1) without changing item value of the tensor.
   '''
-  
+
   return
 
 def get_attention_weight_from_score(attention_score):
   '''
   This function converts attention score to attention weight.
-  
+
   Argument:
     attention_score (torch.Tensor): Tensor of real number. Has a shape of [T]
 
   Output:
     attention_weight (torch.Tensor): Tensor of real number between 0 and 1. Sum of attention_weight is 1. Has a shape of [T]
-  
+
   TODO: Complete this function
   '''
   assert attention_score.ndim == 1
-  
+
   return
 
 def get_weighted_sum(values, attention_weight):
   '''
   This function converts attention score to attention weight
-  
+
   Argument:
     values (torch.Tensor): Has a shape of [T, C]. These are vectors that are used to form attention vector
     attention_weight: Has a shape of [T], which represents the weight for each vector to compose the attention vector
 
   Output:
     attention_vector (torch.Tensor): Weighted sum of values using the attention weight. Has a shape of [C]
-  
+
   TODO: Complete this function using torch.mm
   '''
   return
@@ -74,45 +74,45 @@ def get_attention_score_for_a_batch_query(keys, query):
   This function returns a batch of attention score for each vector in (multi-batch) keys for a given (single-batch) query.
   You can regard 'keys' as hidden states over timestep of Encoder, while query is a hidden state of specific time step of Decoder
   Name 'keys' are used because it is used for calculating attention score (match rate between given vector and query).
-  
+
   For every C-dimensional vector key, the attention score is a dot product between the key and the query vector.
-  
+
   Arguments:
     keys (torch.Tensor): Has a shape of [N, T, C]. These are vectors that a query wants attend to
     query (torch.Tensor): Has a shape of [N, C]. This is a vector that attends to other set of vectors (keys and values)
-  
+
   Output:
     attention_score (torch.Tensor): The attention score in real number that represent how much does query have to attend to each vector in keys
                                     Has a shape of [N, T]
-                                    
-    attention_score[n, i] has to be a dot product value between keys[n, i] and query[n]                     
-    
+
+    attention_score[n, i] has to be a dot product value between keys[n, i] and query[n]
+
   TODO: Complete this function without using for loop
   Hint: Use torch.bmm or torch.matmul after make two input tensors as 3-dim tensors.
 
   '''
-  return 
+  return
 
 def get_attention_score_for_a_batch_multiple_query(keys, queries):
   '''
   Now you have to implement the attention score for not only single query, but multiple queries.
-  
+
   This function returns a batch of attention score for each vector in keys for given queries.
   You can regard 'keys' as hidden states over timestep of Encoder, while querys are hidden states over timestep of Decoder
   Name 'keys' are used because it is used for calculating attention score (match rate between given vector and query).
-  
+
   For every C-dimensional vector key, the attention score is a dot product between the key and the query vector.
-  
+
   Arguments:
     keys (torch.Tensor): Has a shape of [N, Ts, C]. These are vectors that a query wants attend to
     queries (torch.Tensor): Has a shape of [N, Tt, C]. This is a vector that attends to other set of vectors (keys and values)
-  
+
   Output:
     attention_score (torch.Tensor): The attention score in real number that represent how much does query have to attend to each vector in keys
-                                    Has a shape of [N, Ts, Tt]
-                                    
-    attention_score[n, i, t] has to be a dot product value between keys[n, i] and query[n, t] 
-    
+                                    Has a shape of [N, Tt, Ts]
+
+    attention_score[n, t, i] has to be a dot product value between keys[n, i] and query[n, t]
+
   TODO: Complete this function without using for loop
   HINT: Use torch.bmm() with proper transpose (permutation) of given tensors. (You can use atensor.permute())
         Think about which dimension (axis) of tensors has to be multiplied together and resolved (disappear) after matrix multiplication,
@@ -121,47 +121,48 @@ def get_attention_score_for_a_batch_multiple_query(keys, queries):
   return
 
 
+
 def get_masked_softmax(attention_score, mask):
   '''
   During the batch computation, each sequence in the batch can have different length.
   To group them as in a single tensor, we usually pad values
-    
+
   Arguments:
     attention_score (torch.Tensor): The attention score in real number that represent how much does query have to attend to each vector in keys
-                                    Has a shape of [N, Ts, Tt]
+                                    Has a shape of [N, Tt, Ts]
     mask (torch.Tensor): Boolean tensor with a shape of [N, Ts] that represents whether the corresponding is valid or not.
-                         mask[n, t] == 1 if and only if input_batch[n,t] is not a padded value.
-                         If input_batch[n,t] is a padded value, then mask[n,t] == 0
-  
+                         mask[n, i] == 1 if and only if input_batch[n,i] is not a padded value.
+                         If input_batch[n,i] is a padded value, then mask[n,i] == 0
+
   Output:
     attention_weight (torch.Tensor): The attention weight in real number between 0 and 1. The sum of attention_weight along keys timestep dimension is 1.
-                                    Has a shape of [N, Ts, Tt]
-                                    
-    attention_weight[n, i, t] has to be an attention weight of values[n, i] for queries[n, t] 
-    
+                                    Has a shape of [N, Tt, Ts]
+
+    attention_weight[n, t, i] has to be an attention weight of values[n, i] for queries[n, t]
+
   TODO: Complete this function without using for loop
   Hint: You can give -infinity value by -float("inf")
-
+  Caution: Do not directly replace the "attention_score" tensor. Use atensor.clone()
   '''
 
-  return
+  return 
 
 def get_batch_weighted_sum(values, attention_weight):
   '''
   This function converts attention score to attention weight
-  
+
   Argument:
     values (torch.Tensor): Has a shape of [N, Ts, C]. These are vectors that are used to form attention vector
     attention_weight: Has a shape of [N, Ts, Tt], which represents the weight for each vector to compose the attention vector
                       attention_weight[n, s, t] represents weight for value[n, s] that corresponds to a given query, queries[n, t]
 
   Output:
-    attention_vector (torch.Tensor): Weighted sum of values using the attention weight. 
+    attention_vector (torch.Tensor): Weighted sum of values using the attention weight.
                                      Has a shape of [N, Tt, C]
-  
+
   TODO: Complete this function using torch.bmm
   '''
-  
+
   return
 
 
@@ -169,22 +170,22 @@ def get_batch_weighted_sum(values, attention_weight):
 class TranslatorAtt(TranslatorBi):
   def __init__(self, src_tokenizer, tgt_tokenizer, hidden_size=512, num_layers=3):
     super().__init__(src_tokenizer, tgt_tokenizer, hidden_size, num_layers)
-    
+
     # define new self.decoder_proj
     self.decoder_proj = nn.Linear(hidden_size * 2, self.tgt_vocab_size)
-    
+
   def get_attention_vector(self, encoder_hidden_states, decoder_hidden_states, mask):
     '''
     Arguments:
       encoder_hidden_states (torch.Tensor or PackedSequence): Hidden states of encoder GRU. Shape: [N, Ts, C]
       decoder_hidden_states (torch.Tensor or PackedSequence): Hidden states of decoder GRU. Shape: [N, Tt, C]
-      mask (torch.Tensor): Masking tensor. If the mask value is 0, the attention weight has to be zero. Shape: [N, Tt, Ts]
+      mask (torch.Tensor): Masking tensor. If the mask value is 0, the attention weight has to be zero. Shape: [N, Ts]
 
     Outputs:
       attention_vectors (torch.Tensor or PackedSequence): Attention vectors that has the same shape as decoder_hidden_states
       attention_weights (torch.Tensor): Zero-padded attention weights.
                                 You don't need to return it during the training, but it will help you to implement later problem
-    
+
     TODO: Complete this function using following functions
       get_attention_score_for_a_batch_multiple_query
       get_masked_softmax
@@ -197,19 +198,19 @@ class TranslatorAtt(TranslatorBi):
     if is_packed:
       encoder_hidden_states, source_lens = pad_packed_sequence(encoder_hidden_states, batch_first=True)
       decoder_hidden_states, target_lens = pad_packed_sequence(decoder_hidden_states, batch_first=True)
-    
+
     # Write your code from here
 
     # 1. Calculate attention score using encoder_hidden_states and decoder_hidden_states
     # 2. Mask the attention score using mask and apply softmax to get attention weight
     # 3. Calculate attention vector using attention weight and encoder_hidden_states
 
-    
-    # 
+
+    #
 
 
-    return 
-  
+    return
+
   def forward(self, x, y):
     '''
     Arguments:
@@ -217,14 +218,14 @@ class TranslatorAtt(TranslatorBi):
       y (torch.Tensor or PackedSequence): Batch of target sentences
     Output:
       prob_dist (torch.Tensor or PackedSequence): Batch of probability distribution of word for target sentence
-    
+
     TODO: Complete this function
     '''
 
     is_packed = isinstance(x, PackedSequence)
     enc_hidden_state_by_t, last_hidden_sum = self.run_encoder(x)
     dec_hidden_state_by_t, decoder_last_hidden = self.run_decoder(y, last_hidden_sum)
-    
+
     if is_packed:
       mask = pad_packed_sequence(x, batch_first=True)[0] != 0
     else:
@@ -233,13 +234,16 @@ class TranslatorAtt(TranslatorBi):
     attention_vec, attention_weight = self.get_attention_vector(enc_hidden_state_by_t, dec_hidden_state_by_t, mask)
 
     # TODO: Write your code from here
-    # CAUTION: 
+    # CAUTION:
     #   For the concatenation, you have to concat [dec_hidden_state_by_t; attention_vec], not [attention_vec; dec_hidden_state_by_t]
     return
 
+
 def translate(model, source_sentence):
   '''
-  
+  This function translates a given sentence using a given model.
+  It returns the tokenized source sentence, tokenized translated sentence, translated sentence in string, and attention map
+
   Arguments:
     model (TranslatorAtt): Translator model with attention
     source_sentence (str): Sentence to translate
@@ -248,15 +252,15 @@ def translate(model, source_sentence):
     input_tokens (list): Source sentence in a list of token in token_id
     predicted_tokens (list): Translated sentence in a list of token in token_id
     decoded_string (str): Translated sentence in string
-    attention_map (torch.Tensor): Attention weight between each token of source sentence and target sentence. Has a shape of [Ts, Tt]
-    
+    attention_map (torch.Tensor): Attention weight between each token of source sentence and target sentence. Has a shape of [Tt, Ts]
+
   '''
-  
+
   input_tokens = model.src_tokenizer.encode(source_sentence)
   input_tensor = torch.LongTensor(input_tokens).unsqueeze(0)
   mask = torch.ones_like(input_tensor)
   enc_hidden_state_by_t, last_hidden_sum = model.run_encoder(input_tensor)
-  
+
   # Setup for 0th step
   current_hidden = last_hidden_sum
   current_decoder_token = torch.LongTensor([[2]]) # start of sentence token
@@ -271,11 +275,10 @@ def translate(model, source_sentence):
     You have to 
       1) run decoder rnn for a single step
       2) get attention weight (variable name: att_weight) and attention vector.
-         att_weight.shape == torch.Size([1, len(tokenized_sentence), 1])
+         att_weight.shape == torch.Size([1, 1, len(tokenized_sentence)])
       3) concat decoder out and attention vector
       4) calculate probabilty logit (variable name: logit)
     '''
-
 
     # You don't have to change the codes below.
     # Declare logit and last_hidden properly so that the code below can run without error
@@ -288,7 +291,7 @@ def translate(model, source_sentence):
     total_attetion_weights.append(att_weight[0,0])
   predicted_tokens = torch.cat(total_output, dim=0).tolist()
   attention_map = torch.stack(total_attetion_weights, dim=1)
-  
+
   return  input_tokens, predicted_tokens, model.tgt_tokenizer.decode(predicted_tokens), attention_map
 
 def get_query_key_value(input_tensor, qkv_layer):
@@ -298,7 +301,7 @@ def get_query_key_value(input_tensor, qkv_layer):
   Arguments:
     input_tensor (torch.Tensor): Has a shape of [N, T, C]
     kqv_layer (torch.nn.Linear): Linear layer with in_features=C and out_features=Cn * 3
-    
+
   Outputs:
     queries (torch.Tensor): Has a shape of [N, T, Cn]
     keys (torch.Tensor): Has a shape of [N, T, Cn]
@@ -313,36 +316,37 @@ def get_3d_masked_softmax(attention_score, mask):
   '''
   During the batch computation, each sequence in the batch can have different length.
   To group them as in a single tensor, we usually pad values
-    
+
   Arguments:
     attention_score (torch.Tensor): The attention score in real number that represent how much does query have to attend to each vector in keys
-                                    Has a shape of [N, Tk, Tq]
-    mask (torch.Tensor): Boolean tensor with a shape of [N, Tk, Tq] that represents whether the corresponding is valid or not.
-                         mask[n, tk, tq] == 1 if and only if input_batch[n,tk] is not a padded value.
-                         If input_batch[n,tk] is a padded value, then mask[n,tk, tq] == 0
-  
+                                    Has a shape of [N, Tq, Tk]
+    mask (torch.Tensor): Boolean tensor with a shape of [N, Tq, Tk] that represents whether the corresponding is valid or not.
+                         mask[n, tq, tk] == 1 if and only if input_batch[n,tk] is not a padded value.
+                         If input_batch[n,tk] is a padded value, then mask[n,tq, tk] == 0
+
   Output:
     attention_weight (torch.Tensor): The attention weight in real number between 0 and 1. The sum of attention_weight along keys timestep dimension is 1.
-                                    Has a shape of [N, Tk, Tq]
-                                    
-    attention_weight[n, i, t] has to be an attention weight of values[n, i] for queries[n, t] 
-    
+                                    Has a shape of [N, Tq, Tk]
+
+    attention_weight[n, t, i] has to be an attention weight of values[n, i] for queries[n, t]
+
   TODO: Complete this function without using for loop
+  Caution: Do not directly mask the attention score. use .clone() instead
 
   '''
-  assert attention_score.ndim == 3 and mask.ndim == 3
+  assert attention_score.ndim == mask.ndim == 3
 
   return
 
-def get_self_attention(input_tensor, qkv_layer, mask):
+def get_self_attention(input_tensor, qkv_layer, mask_2d):
   '''
   This function returns output of self-attention for a given input tensor using with a given kqv_layer
-  
+
   Arguments:
     input_tensor (torch.Tensor): Has a shape of [N, T, C]
     kqv_layer (torch.nn.Linear): Linear layer with in_features=C and out_features=Cn * 3
-    mask (torch.Tensor): 
-    
+    mask (torch.Tensor): Boolean tensor with a shape of [N, T] that represents whether the corresponding is valid or not.
+
   Outputs:
     output (torch.Tensor): Has a shape of [N, T, Cn]
 
@@ -352,6 +356,8 @@ def get_self_attention(input_tensor, qkv_layer, mask):
         get_3d_masked_softmax()
         get_batch_weighted_sum()
   '''
+  mask_3d = mask_2d.unsqueeze(1).repeat(1,input_tensor.shape[1],1)
+
   return
 
 def get_multihead_split(x, num_head):
@@ -390,16 +396,16 @@ def get_multihead_concat(x, num_head):
 def get_multi_head_self_attention(input_tensor, qkv_layer, output_proj_layer, mask, num_head=8):
   '''
   This function returns output of multi-headed self-attention for a given input tensor using with a given kqv_layer
-  
+
   Arguments:
     input_tensor (torch.Tensor): Has a shape of [N, T, C]
     qkv_layer (torch.nn.Linear): Linear layer with in_features=C and out_features=Cn * 3
     output_proj_layer (torch.nn.Linear): Linear layer with in_features=Cn and out_features=C
-    mask (torch.Tensor): Boolean tensor with a shape of [N, Ts] that represents whether the corresponding is valid or not.
+    mask (torch.Tensor): Boolean tensor with a shape of [N, T, T] that represents whether the corresponding is valid or not.
                          mask[n, t] == 1 if and only if input_batch[n,t] is not a padded value.
                          If input_batch[n,t] is a padded value, then mask[n,t] == 0
     num_head (int): Number of heads
-    
+
   Outputs:
     output (torch.Tensor): Has a shape of [N, T, Cn]
 
@@ -433,64 +439,70 @@ class SelfAttention(nn.Module):
     self.qkv = nn.Linear(self.input_size, self.hidden_size * 3)
     self.out_proj = nn.Linear(self.hidden_size, self.input_size)
     self.mask_value = mask_value
-    self.num_head = num_head 
+    self.num_head = num_head
     assert self.hidden_size % self.num_head == 0
     self.dim_per_head = self.hidden_size // self.num_head
-    
+
   '''
   TODO: Implement this function as functions you implemented above
   '''
   def _get_qkv(self, x):
     return
-  
+
   def _get_multihead_split(self, x):
-    return 
-  
+    return
+
   def _get_multiheaded_att_score(self, keys, queries):
-    return 
-  
+    return
+
   def _get_masked_softmax(self, score, masks):
-    return 
-  
+    return
+
   def _get_weighted_sum(self, values, weights):
-    return 
-  
+    return
+
   def forward(self, x, mask=None):
     '''
     TODO: Implement this function using the functions you implemented above
     '''
     if mask is None:
       mask = torch.ones([x.shape[0], x.shape[1], x.shape[1]])
-    
-    return
+    if mask.ndim == 2:
+      # TODO: Convert mask to 3D mask
+      pass
+
+    return  
   
 class CrossAttention(SelfAttention):
   def __init__(self, input_size, hidden_size, num_head, mask_value=0):
     super().__init__(input_size, hidden_size, num_head, mask_value)
-    
-  def forward(self, q_seq, kv_seq, mask=None):
+
+  def forward(self, q_seq, kv_seq, encoder_mask=None):
     '''
     Arguments:
-      x (torch.Tensor): Sequence to be used for query
-      y (torch.Tensor): Sequence to be used for key and value
-      mask (torch.Tensor): Masking tensor. If the mask value is 0, the attention weight has to be zero. Shape: [N, Ty, Tx]
+      q_seq (torch.Tensor): Sequence to be used for query
+      kv_seq (torch.Tensor): Sequence to be used for key and value
+      mask (torch.Tensor): Masking tensor. If the mask value is 0, the attention weight has to be zero. Shape: [N, Ty]
 
     Outs:
       output (torch.Tensor): Output of cross attention. Shape: [N, Tx, C]
 
     TODO: Complete this function using your completed functions of below:
     '''
-    if mask is None:
-      mask = torch.ones([q_seq.shape[0], kv_seq.shape[1], q_seq.shape[1]])
+    if encoder_mask is None:
+      encoder_mask = torch.ones([q_seq.shape[0], kv_seq.shape[1]]) # Then convert to 3D mask
+    if encoder_mask.ndim == 2:
+      # TODO: Convert mask to 3D mask
+      pass
 
-    return 
+    return
 
 class EncoderLayer(nn.Module):
   def __init__(self, in_size, emb_size, mlp_size, num_head):
     super().__init__()
     self.att_block = ResidualLayerNormModule(SelfAttention(in_size, emb_size, num_head))
     self.mlp_block = ResidualLayerNormModule(MLP(emb_size, mlp_size))
-  
+
   def forward(self, x):
     out = self.mlp_block(self.att_block(x['input'], x['mask']))
     return {'input':out, 'mask':x['mask']}
@@ -502,7 +514,7 @@ class DecoderLayer(nn.Module):
     self.att_block = ResidualLayerNormModule(SelfAttention(in_size, emb_size, num_head))
     self.cross_att_block = ResidualLayerNormModule(CrossAttention(in_size, emb_size, num_head))
     self.mlp_block = ResidualLayerNormModule(MLP(emb_size, mlp_size))
-  
+
   def forward(self, x):
     out = self.att_block(x['input'], x['decoder_mask'])
     out = self.cross_att_block(out,  x['encoder_mask'], x['encoder_out'])
@@ -517,9 +529,9 @@ class Encoder(nn.Module):
       self.layers.append(EncoderLayer(in_size,emb_size,mlp_size,num_head))
     self.pos_enc = PosEncoding(emb_size, 10000)
     self.token_emb = nn.Embedding(vocab_size, emb_size)
-    
+
   def forward(self, x):
-    mask = torch.ones([x.shape[0], x.shape[1], x.shape[1]])
+    mask = torch.ones([x.shape[0], x.shape[1]])
     mask[x==0] = 0
     temp = torch.ones_like(x)
     result = torch.arange(x.shape[-1]).to(x.device) * temp
@@ -534,16 +546,14 @@ class Decoder(nn.Module):
       self.layers.append(DecoderLayer(in_size,emb_size,mlp_size,num_head))
     self.pos_enc = PosEncoding(emb_size, 10000)
     self.token_emb = nn.Embedding(vocab_size, emb_size)
-    
+
   def forward(self, x, y):
-    mask = torch.triu(torch.ones(x.shape[0], x.shape[1], x.shape[1]))
-    cross_attention_mask = torch.ones(x.shape[0], y['input'].shape[1], x.shape[1]) # N, Tk, Tq
-    cross_attention_mask[y['mask'][:,:, 0]==0] = 0
+    mask = torch.tril(torch.ones(x.shape[0], x.shape[1], x.shape[1]))
 
     temp = torch.ones_like(x)
     result = torch.arange(x.shape[-1]).to(x.device) * temp
     x = self.token_emb(x) + self.pos_enc(result)
-    return self.layers({'input':x, 'decoder_mask':mask, 'encoder_out':y['input'], 'encoder_mask':cross_attention_mask})
+    return self.layers({'input':x, 'decoder_mask':mask, 'encoder_out':y['input'], 'encoder_mask':y['mask']})
 
 class TransformerTranslator(nn.Module):
   def __init__(self, in_size, emb_size, mlp_size, num_head, num_enc_layers, num_dec_layers, enc_vocab_size, dec_vocab_size):
@@ -551,7 +561,7 @@ class TransformerTranslator(nn.Module):
     self.encoder = Encoder(in_size, emb_size, mlp_size, num_head, num_enc_layers, enc_vocab_size)
     self.decoder = Decoder(in_size, emb_size, mlp_size, num_head, num_dec_layers, dec_vocab_size)
     self.final_proj = nn.Linear(emb_size, dec_vocab_size)
-  
+
   def forward(self, x:torch.Tensor, y:torch.Tensor):
     '''
     Arguments:
