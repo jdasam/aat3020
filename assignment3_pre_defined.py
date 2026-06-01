@@ -24,9 +24,9 @@ def get_lora_model(base_model):
 
     config = LoraConfig(
         task_type=TaskType.CAUSAL_LM,
-        r=8,
-        lora_alpha=16,
-        target_modules=["c_attn"],
+        r=16,
+        lora_alpha=32,
+        target_modules=["c_attn", "c_proj", "c_fc"],
         lora_dropout=0.05,
         bias="none",
     )
@@ -56,8 +56,10 @@ def plot_loss_curves(full_losses, lora_losses=None):
     plt.show()
 
 
-def generate_text(model, tokenizer, prompt, max_new_tokens=100, temperature=1.0):
-    """Generate text from a fine-tuned GPT-2 model (works with both Full and LoRA models)."""
+def generate_text(model, tokenizer, prompt, max_new_tokens=100, temperature=1.0, num_samples=1):
+    """Generate text from a fine-tuned GPT-2 model (works with both Full and LoRA models).
+    Returns a list of strings (length == num_samples).
+    """
     model.eval()
     device = next(model.parameters()).device
     input_ids = tokenizer.encode(prompt, return_tensors='pt').to(device)
@@ -68,7 +70,8 @@ def generate_text(model, tokenizer, prompt, max_new_tokens=100, temperature=1.0)
             max_new_tokens=max_new_tokens,
             temperature=temperature,
             do_sample=True,
+            num_return_sequences=num_samples,
             pad_token_id=tokenizer.eos_token_id,
         )
 
-    return tokenizer.decode(output_ids[0], skip_special_tokens=True)
+    return [tokenizer.decode(ids, skip_special_tokens=True) for ids in output_ids]
