@@ -56,10 +56,13 @@ def plot_loss_curves(full_losses, lora_losses=None):
     plt.show()
 
 
-def generate_text(model, tokenizer, prompt, max_new_tokens=100, temperature=1.0, num_samples=1):
+def generate_text(model, tokenizer, prompt, max_new_tokens=100, temperature=1.0, num_samples=1, seed=None):
     """Generate text from a fine-tuned GPT-2 model (works with both Full and LoRA models).
     Returns a list of strings (length == num_samples).
     """
+    if seed is not None:
+        torch.manual_seed(seed)
+
     model.eval()
     device = next(model.parameters()).device
     input_ids = tokenizer.encode(prompt, return_tensors='pt').to(device)
